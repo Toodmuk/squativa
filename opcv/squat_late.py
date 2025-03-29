@@ -10,7 +10,7 @@ class SquatDetector:
         # Initialize MediaPipe Pose with multi-person detection
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
-            min_detection_confidence=0.6,
+            min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
             model_complexity=1)  # Higher model complexity for better accuracy
         self.mp_drawing = mp.solutions.drawing_utils
@@ -206,7 +206,7 @@ class SquatDetector:
         
         # Check forward lean (using hip angle)
         if hip_angle < self.hip_angle_threshold:
-            correct_form = True
+            correct_form = False
             form_feedback = "Leaning too far forward!"
         
         # Detect squat state
@@ -320,10 +320,6 @@ class SquatDetector:
 
         # Draw the split line in the center
         cv2.line(large_frame, (midpoint, 0), (midpoint, h), (255, 255, 255), 2)
-
-        # Display rhythm pattern on the screen
-        rhythm_text = "Rhythm Pattern: " + ", ".join([f"{key}: {value:.1f}s" for key, value in self.rhythm_pattern.items()])
-        cv2.putText(large_frame, rhythm_text, (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
         return large_frame
 

@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'opcv'))
 
 try:
     # Import the SquatDetector from your files
-    from opcv.squat_new import SquatDetector
+    from opcv.squat_late import SquatDetector
     print("Successfully imported SquatDetector")
 except ImportError as e:
     print(f"Error importing SquatDetector: {e}")
