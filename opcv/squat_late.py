@@ -23,8 +23,8 @@ class SquatDetector:
             min_tracking_confidence=0.5)
         
         # Squat detection parameters
-        self.knee_angle_threshold = 100  # Angle threshold for squat detection
-        self.hip_angle_threshold = 110   # Hip angle threshold for posture
+        self.knee_angle_threshold = 70  # Angle threshold for squat detection
+        self.hip_angle_threshold = 90   # Hip angle threshold for posture
         
         # Rhythm-based scoring
         self.start_time = time.time()
@@ -206,7 +206,7 @@ class SquatDetector:
         
         # Check forward lean (using hip angle)
         if hip_angle < self.hip_angle_threshold:
-            correct_form = False
+            correct_form = True
             form_feedback = "Leaning too far forward!"
         
         # Detect squat state
@@ -277,8 +277,9 @@ class SquatDetector:
         """
         # Split the frame into left and right halves
         h, w, _ = frame.shape
-        left_frame = frame[:, :w // 2]
-        right_frame = frame[:, w // 2:]
+        midpoint = w // 2
+        left_frame = frame[:, :midpoint]
+        right_frame = frame[:, midpoint:]
 
         # Process each half with MediaPipe Holistic
         left_results = self.holistic.process(cv2.cvtColor(left_frame, cv2.COLOR_BGR2RGB))
@@ -296,6 +297,7 @@ class SquatDetector:
                 self.mp_drawing_styles.get_default_pose_landmarks_style())
             evaluation = self.evaluate_squat(left_results.pose_landmarks, "player1")
             self.display_player_info(left_frame, evaluation, "player1")
+            self.apply_overlay(left_frame, evaluation)
 
         # Draw landmarks and evaluate squats for Player 2 (right)
         if right_results.pose_landmarks:
@@ -306,16 +308,34 @@ class SquatDetector:
                 self.mp_drawing_styles.get_default_pose_landmarks_style())
             evaluation = self.evaluate_squat(right_results.pose_landmarks, "player2")
             self.display_player_info(right_frame, evaluation, "player2")
+            self.apply_overlay(right_frame, evaluation)
 
         # Combine the left and right frames into the large frame
-        large_frame[:, :w // 2] = left_frame
-        large_frame[:, w // 2:] = right_frame
+        large_frame[:, :midpoint] = left_frame
+        large_frame[:, midpoint:] = right_frame
 
         # Add player labels
         cv2.putText(large_frame, "Player 1", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(large_frame, "Player 2", (w // 2 + 50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(large_frame, "Player 2", (midpoint + 50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+        # Draw the split line in the center
+        cv2.line(large_frame, (midpoint, 0), (midpoint, h), (255, 255, 255), 2)
 
         return large_frame
+
+    def apply_overlay(self, frame, evaluation):
+        """
+        Apply a translucent red or green overlay based on the player's posture correctness.
+        """
+        if evaluation:
+            overlay = frame.copy()
+            color = (0, 255, 0) if evaluation["correct_form"] else (0, 0, 255)  # Green for correct, red for incorrect
+            alpha = 0.3  # Transparency factor
+
+            # Apply overlay if the player is squatting or has incorrect posture
+            if evaluation["is_squatting"] or not evaluation["correct_form"]:
+                cv2.rectangle(overlay, (0, 0), (frame.shape[1], frame.shape[0]), color, -1)
+                cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
     def display_player_info(self, frame, evaluation, player_key):
         """Display squat count, score, and feedback for a player"""
@@ -341,14 +361,14 @@ class SquatDetector:
 def main():
     # Define a rhythm pattern (in seconds from start)
     rhythm_pattern = {
-        "squat1": 2.3,
-        "squat2": 5.6,
-        "squat3": 8.1,
-        "squat4": 10.5,
-        "squat5": 13.2
+        "squat1": 12.3,
+        "squat2": 15.6,
+        "squat3": 18.1,
+        "squat4": 20.5,
+        "squat5": 23.2
     }
     
-    cap = cv2.VideoCapture(1)  # Use default webcam
+    cap = cv2.VideoCapture(0)  # Use default webcam
     detector = SquatDetector(rhythm_pattern)
     
     # Get original frame dimensions
@@ -359,6 +379,10 @@ def main():
     
     height, width, _ = frame.shape
     
+    # Calculate new dimensions for 4:3 aspect ratio
+    new_width = int(height * (4 / 3))
+    new_height = height  # Keep the height the same
+    
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
@@ -368,8 +392,11 @@ def main():
         # Process the frame
         processed_frame = detector.process_frame(frame)
         
-        # Display the frame (2x larger window)
-        cv2.imshow('Rhythm Squat Challenge', processed_frame)
+        # Resize the frame to 4:3 aspect ratio
+        resized_frame = cv2.resize(processed_frame, (new_width*2, new_height*2))
+        
+        # Display the resized frame
+        cv2.imshow('Rhythm Squat Challenge', resized_frame)
         
         # Reset game if 'r' is pressed
         key = cv2.waitKey(1) & 0xFF
