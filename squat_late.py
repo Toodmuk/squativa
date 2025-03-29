@@ -50,7 +50,8 @@ class SquatDetector:
                 "last_detected": 0,
                 "rhythm_score": 0,
                 "total_rhythm_squats": 0,
-                "next_target_time": 0
+                "next_target_time": 0,
+                "aligned_with_target": False,  # New field to track alignment
             },
             "player2": {
                 "squat_count": 0,
@@ -62,7 +63,8 @@ class SquatDetector:
                 "last_detected": 0,
                 "rhythm_score": 0,
                 "total_rhythm_squats": 0,
-                "next_target_time": 0
+                "next_target_time": 0,
+                "aligned_with_target": False,  # New field to track alignment
             }
         }
         
@@ -179,6 +181,10 @@ class SquatDetector:
         # Return detected players
         return {"player1": player1_landmarks, "player2": player2_landmarks}
 
+    def update_target_alignment(self, player_key, is_aligned):
+        """Update whether the player's squat is aligned with the target zone."""
+        self.players[player_key]["aligned_with_target"] = is_aligned
+
     def evaluate_squat(self, landmarks, player_key):
         """
         Evaluate squat form and count for a specific player
@@ -232,6 +238,9 @@ class SquatDetector:
                 # Calculate form score (0-100)
                 form_score = 100 if correct_form else 50
                 
+                # Check alignment with target zone
+                alignment_score = 100 if self.players[player_key]["aligned_with_target"] else 0
+                
                 # Calculate rhythm score if we have target times
                 rhythm_score = 0
                 if self.next_target_times[player_key]:
@@ -259,8 +268,8 @@ class SquatDetector:
                 # Store the rhythm score for this squat
                 self.players[player_key]["rhythm_score"] = rhythm_score
                 
-                # Add to total score (form score + rhythm score)
-                total_squat_score = (form_score + rhythm_score) / 2
+                # Add to total score (form score + rhythm score + alignment score)
+                total_squat_score = (form_score + rhythm_score + alignment_score) / 3
                 self.players[player_key]["score"] += total_squat_score
             
         return {
@@ -342,6 +351,11 @@ class SquatDetector:
                 squat_text = "SQUATTING"
                 cv2.putText(frame, squat_text, (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, squat_color, 2)
 
+            # Display big text for perfect timing
+            if self.players[player_key]["rhythm_score"] == 100:
+                big_text = np.random.choice(["Good Job", "Brilliant", "Wonderful"])
+                cv2.putText(frame, big_text, (50, 300), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 255), 5)
+
 def main():
     # Define a rhythm pattern (in seconds from start)
     rhythm_pattern = {
@@ -352,7 +366,7 @@ def main():
         "squat5": 13.2
     }
     
-    cap = cv2.VideoCapture(1)  # Use default webcam
+    cap = cv2.VideoCapture(0)  # Use default webcam
     detector = SquatDetector(rhythm_pattern)
     
     # Get original frame dimensions

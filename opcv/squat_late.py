@@ -124,6 +124,10 @@ class SquatDetector:
         Returns:
             Angle in degrees
         """
+        # Ensure all points are valid
+        if not all(isinstance(point, (list, tuple)) and len(point) == 2 for point in [a, b, c]):
+            raise ValueError("Invalid points provided for angle calculation. Points must be [x, y] format.")
+
         a = np.array(a)
         b = np.array(b)
         c = np.array(c)
@@ -230,7 +234,7 @@ class SquatDetector:
                 self.players[player_key]["last_squat_time"] = squat_time
                 
                 # Calculate form score (0-100)
-                form_score = 100 if correct_form else 50
+                form_score = 100 if correct_form else 10
                 
                 # Calculate rhythm score if we have target times
                 rhythm_score = 0
@@ -270,6 +274,18 @@ class SquatDetector:
             "is_squatting": self.players[player_key]["squat_state"],
             "correct_form": correct_form
         }
+
+    def update_target_alignment(self, player_key, in_target_zone):
+        """
+        Update the alignment status of the player based on whether they are in the target zone.
+        Args:
+            player_key (str): The key identifying the player (e.g., "player1" or "player2").
+            in_target_zone (bool): Whether the player is in the target zone.
+        """
+        if player_key in self.players:
+            self.players[player_key]["in_target_zone"] = in_target_zone
+        else:
+            print(f"Warning: Player key '{player_key}' not found.")
 
     def process_frame(self, frame):
         """

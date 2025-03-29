@@ -398,16 +398,21 @@ class GameScreen:
                         distance = abs(graphic["x"] - self.game.target_position[0])
                         
                         # Check if graphic is in target zone
-                        if distance < self.game.target_zone_radius:
+                        in_target_zone = distance < self.game.target_zone_radius
+                        
+                        # Pass alignment information to SquatDetector
+                        self.squat_detector.update_target_alignment(player_key, in_target_zone)
+                        
+                        if in_target_zone:
                             graphic["reached_target"] = True
                             graphic["shine"] = 10  # Start shine effect
                             
-                            # Add points based on form
+                            # Add points based on form and alignment
                             if player_data["correct_form"]:
                                 self.game.score += 100
                             else:
                                 self.game.score += 50
-                                
+                            
                             print(f"Hit target! Score: {self.game.score}")
                             break
     
