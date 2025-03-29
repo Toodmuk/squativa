@@ -10,7 +10,7 @@ class MenuScreen:
         self.game.screen.fill(self.game.BLACK)
         
         # Draw title
-        title_text = self.game.fonts["large"].render("Fitness Dance Game", True, self.game.WHITE)
+        title_text = self.game.fonts["large"].render("SQUATIVA", True, self.game.WHITE)
         title_rect = title_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//4))
         self.game.screen.blit(title_text, title_rect)
         
