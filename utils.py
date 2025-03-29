@@ -65,82 +65,76 @@ def load_music_library():
     ]
     return music_library
 
+# Store the squat image so we only load it once
+_squat_image = None
+
 def draw_squat_graphic(surface, graphic):
-    # Draw the squat graphic (currently just a square, you'll replace with your own graphic)
+    global _squat_image
+    
+    # Create a temporary surface for this frame
     temp_surface = pygame.Surface((graphic["width"], graphic["height"]), pygame.SRCALPHA)
     
     # If the graphic is at the target zone, make it shine
     if graphic["shine"] > 0:
-        # Create a glow/shine effect - Fix the integer conversion error
-        glow_radius = int(graphic["width"] // 2 + graphic["shine"] * 5)  # Convert to integer
+        # Create a glow/shine effect
+        glow_radius = int(graphic["width"] // 2 + graphic["shine"] * 5)
         pygame.draw.rect(
             temp_surface, 
-            (255, 255, 100, int(100 - graphic["shine"] * 10)),  # Convert to integer
+            (255, 255, 100, int(100 - graphic["shine"] * 10)),
             (graphic["width"]//2 - glow_radius, graphic["height"]//2 - glow_radius, 
              glow_radius * 2, glow_radius * 2),
             border_radius=glow_radius
         )
     
-    # Draw the actual graphic with current opacity
-    pygame.draw.rect(
-        temp_surface, 
-        (255, 255, 255, int(graphic["opacity"])),  # Convert to integer
-        (0, 0, graphic["width"], graphic["height"]),
-        border_radius=15
-    )
+    # Create a simple graphic instead of trying to load an image
+    if _squat_image is None:
+        print("Creating a new squat graphic")
+        # Create a simple stick figure squat
+        _squat_image = pygame.Surface((100, 100), pygame.SRCALPHA)
+        
+        # Background circle
+        pygame.draw.circle(_squat_image, (150, 100, 255, 200), (50, 50), 45)
+        pygame.draw.circle(_squat_image, (200, 150, 255, 200), (50, 50), 45, 3)
+        
+        # Draw a simple stick figure in squat position
+        # Head
+        pygame.draw.circle(_squat_image, (255, 255, 255), (50, 30), 12)
+        
+        # Body
+        pygame.draw.line(_squat_image, (255, 255, 255), (50, 42), (50, 65), 4)
+        
+        # Arms in squat position
+        pygame.draw.line(_squat_image, (255, 255, 255), (50, 50), (25, 60), 4)
+        pygame.draw.line(_squat_image, (255, 255, 255), (50, 50), (75, 60), 4)
+        
+        # Legs in squat position
+        pygame.draw.line(_squat_image, (255, 255, 255), (50, 65), (30, 85), 4)
+        pygame.draw.line(_squat_image, (255, 255, 255), (50, 65), (70, 85), 4)
+        
+        # Add text 
+        font = pygame.font.SysFont("Arial", 12, bold=True)
+        text = font.render("SQUAT", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(50, 15))
+        _squat_image.blit(text, text_rect)
     
-    pygame.draw.rect(
-        temp_surface, 
-        (0, 150, 255, int(graphic["opacity"])),  # Convert to integer 
-        (0, 0, graphic["width"], graphic["height"]), 
-        3, 
-        border_radius=15
-    )
+    # Scale image to fit graphic dimensions
+    scaled_image = pygame.transform.scale(_squat_image, (graphic["width"], graphic["height"]))
     
-    # Draw a simple squat icon inside the square (placeholder)
-    if graphic["opacity"] > 50:
-        # Stick figure for squat
-        pygame.draw.circle(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//4), 
-            10
-        )
-        pygame.draw.line(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//4), 
-            (graphic["width"]//2, graphic["height"]//2), 
-            5
-        )
-        pygame.draw.line(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//2), 
-            (graphic["width"]//3, graphic["height"]*3//4), 
-            5
-        )
-        pygame.draw.line(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//2), 
-            (graphic["width"]*2//3, graphic["height"]*3//4), 
-            5
-        )
-        pygame.draw.line(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//2), 
-            (graphic["width"]//3, graphic["height"]*2//5), 
-            5
-        )
-        pygame.draw.line(
-            temp_surface, 
-            (0, 0, 0, int(graphic["opacity"])),  # Convert to integer
-            (graphic["width"]//2, graphic["height"]//2), 
-            (graphic["width"]*2//3, graphic["height"]*2//5), 
-            5
-        )
+    # Apply opacity
+    if graphic["opacity"] < 255:
+        # Create a copy with adjusted alpha
+        alpha_image = scaled_image.copy()
+        alpha_value = max(0, min(255, int(graphic["opacity"])))
+        alpha_image.fill((255, 255, 255, alpha_value), None, pygame.BLEND_RGBA_MULT)
+        scaled_image = alpha_image
+    
+    # Draw the image onto the temporary surface
+    temp_surface.blit(scaled_image, (0, 0))
     
     # Position and draw the graphic
     surface.blit(temp_surface, (graphic["x"] - graphic["width"]//2, graphic["y"] - graphic["height"]//2))
+    
+    # For debugging, draw the position coordinates
+    debug_font = pygame.font.SysFont("Arial", 12)
+    pos_text = debug_font.render(f"({int(graphic['x'])},{int(graphic['y'])})", True, (255, 255, 255))
+    surface.blit(pos_text, (graphic["x"] - 20, graphic["y"] - graphic["height"]//2 - 20))
