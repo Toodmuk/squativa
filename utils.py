@@ -21,6 +21,7 @@ def load_fonts():
             fonts["large"] = pygame.font.Font(font_path, 72)
             fonts["medium"] = pygame.font.Font(font_path, 48)
             fonts["small"] = pygame.font.Font(font_path, 32)
+            fonts["sn"] = pygame.font.Font(font_path, 24)
             print("Custom font loaded successfully!")
     except Exception as e:
         print(f"Error loading fonts: {e}")
@@ -69,8 +70,6 @@ def load_music_library():
 _squat_image = None
 
 def draw_squat_graphic(surface, graphic):
-    global _squat_image
-    
     # Create a temporary surface for this frame
     temp_surface = pygame.Surface((graphic["width"], graphic["height"]), pygame.SRCALPHA)
     
@@ -86,39 +85,15 @@ def draw_squat_graphic(surface, graphic):
             border_radius=glow_radius
         )
     
-    # Create a simple graphic instead of trying to load an image
-    if _squat_image is None:
-        print("Creating a new squat graphic")
-        # Create a simple stick figure squat
-        _squat_image = pygame.Surface((100, 100), pygame.SRCALPHA)
-        
-        # Background circle
-        pygame.draw.circle(_squat_image, (150, 100, 255, 200), (50, 50), 45)
-        pygame.draw.circle(_squat_image, (200, 150, 255, 200), (50, 50), 45, 3)
-        
-        # Draw a simple stick figure in squat position
-        # Head
-        pygame.draw.circle(_squat_image, (255, 255, 255), (50, 30), 12)
-        
-        # Body
-        pygame.draw.line(_squat_image, (255, 255, 255), (50, 42), (50, 65), 4)
-        
-        # Arms in squat position
-        pygame.draw.line(_squat_image, (255, 255, 255), (50, 50), (25, 60), 4)
-        pygame.draw.line(_squat_image, (255, 255, 255), (50, 50), (75, 60), 4)
-        
-        # Legs in squat position
-        pygame.draw.line(_squat_image, (255, 255, 255), (50, 65), (30, 85), 4)
-        pygame.draw.line(_squat_image, (255, 255, 255), (50, 65), (70, 85), 4)
-        
-        # Add text 
-        font = pygame.font.SysFont("Arial", 12, bold=True)
-        text = font.render("SQUAT", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(50, 15))
-        _squat_image.blit(text, text_rect)
+    # Get the image from the graphic
+    squat_image = graphic.get("image")
+    
+    if squat_image is None:
+        print("Warning: No image in graphic, skipping draw")
+        return
     
     # Scale image to fit graphic dimensions
-    scaled_image = pygame.transform.scale(_squat_image, (graphic["width"], graphic["height"]))
+    scaled_image = pygame.transform.scale(squat_image, (graphic["width"], graphic["height"]))
     
     # Apply opacity
     if graphic["opacity"] < 255:
@@ -134,7 +109,62 @@ def draw_squat_graphic(surface, graphic):
     # Position and draw the graphic
     surface.blit(temp_surface, (graphic["x"] - graphic["width"]//2, graphic["y"] - graphic["height"]//2))
     
-    # For debugging, draw the position coordinates
-    debug_font = pygame.font.SysFont("Arial", 12)
-    pos_text = debug_font.render(f"({int(graphic['x'])},{int(graphic['y'])})", True, (255, 255, 255))
-    surface.blit(pos_text, (graphic["x"] - 20, graphic["y"] - graphic["height"]//2 - 20))
+    # # For debugging, draw the position coordinates
+    # debug_font = pygame.font.SysFont("Arial", 12)
+    # pos_text = debug_font.render(f"({int(graphic['x'])},{int(graphic['y'])})", True, (255, 255, 255))
+    # surface.blit(pos_text, (graphic["x"] - 20, graphic["y"] - graphic["height"]//2 - 20))
+
+# In utils.py, add this function to load the background image
+def load_background_image():
+    """Load background image for the game"""
+    try:
+        # Try to load the background image
+        # Update this path to where you've placed your background image
+        image_path = "graphics/bg.png"
+        
+        # Check if file exists first
+        if os.path.exists(image_path):
+            print(f"Loading background image from: {image_path}")
+            background = pygame.image.load(image_path).convert()
+            print("Background image loaded successfully!")
+            return background
+        else:
+            # Try alternative file extensions
+            alt_path = "graphics/bg.png"
+            if os.path.exists(alt_path):
+                print(f"Loading background image from: {alt_path}")
+                background = pygame.image.load(alt_path).convert()
+                print("Background image loaded successfully!")
+                return background
+            else:
+                print("No background image found at the specified path.")
+                return None
+    except Exception as e:
+        print(f"Error loading background image: {e}")
+        return None
+
+# Add this function to scale the background to fit the screen
+def scale_background(background, screen_width, screen_height):
+    """Scale background image to fit the screen"""
+    if background is None:
+        return None
+    
+    try:
+        # Scale the image to fill the screen while maintaining aspect ratio
+        bg_width, bg_height = background.get_size()
+        scale_factor = max(screen_width / bg_width, screen_height / bg_height)
+        
+        new_width = int(bg_width * scale_factor)
+        new_height = int(bg_height * scale_factor)
+        
+        scaled_bg = pygame.transform.scale(background, (new_width, new_height))
+        
+        # Create a cropping rect to center the image if it's larger than the screen
+        crop_x = max(0, (new_width - screen_width) // 2)
+        crop_y = max(0, (new_height - screen_height) // 2)
+        
+        cropped_bg = scaled_bg.subsurface((crop_x, crop_y, screen_width, screen_height))
+        return cropped_bg
+    except Exception as e:
+        print(f"Error scaling background: {e}")
+        return None

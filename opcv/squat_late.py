@@ -331,8 +331,9 @@ class SquatDetector:
         large_frame[:, midpoint:] = right_frame
 
         # Add player labels
-        cv2.putText(large_frame, "Player 1", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(large_frame, "Player 2", (midpoint + 50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        # Comment out Player 1 and Player 2 labels
+        # cv2.putText(large_frame, "Player 1", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        # cv2.putText(large_frame, "Player 2", (midpoint + 50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
         # Draw the split line in the center
         cv2.line(large_frame, (midpoint, 0), (midpoint, h), (255, 255, 255), 2)
@@ -355,24 +356,21 @@ class SquatDetector:
 
     def display_player_info(self, frame, evaluation, player_key):
         """Display squat count, score, and feedback for a player"""
-        if evaluation:
-            # Display squat count
-            count_text = f"Squats: {self.players[player_key]['squat_count']}"
-            cv2.putText(frame, count_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # if evaluation:
+            # Comment out all display logic for both players
+            # count_text = f"Squats: {self.players[player_key]['squat_count']}"
+            # cv2.putText(frame, count_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-            # Display score
-            score_text = f"Score: {int(self.players[player_key]['score'])}"
-            cv2.putText(frame, score_text, (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            # score_text = f"Score: {int(self.players[player_key]['score'])}"
+            # cv2.putText(frame, score_text, (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-            # Display feedback if form is incorrect
-            if not evaluation["correct_form"] and evaluation["form_feedback"]:
-                cv2.putText(frame, evaluation["form_feedback"], (20, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            # if not evaluation["correct_form"] and evaluation["form_feedback"]:
+            #     cv2.putText(frame, evaluation["form_feedback"], (20, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-            # Visualize squat state
-            if evaluation["is_squatting"]:
-                squat_color = (0, 255, 0) if evaluation["correct_form"] else (0, 0, 255)
-                squat_text = "SQUATTING"
-                cv2.putText(frame, squat_text, (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, squat_color, 2)
+            # if evaluation["is_squatting"]:
+            #     squat_color = (0, 255, 0) if evaluation["correct_form"] else (0, 0, 255)
+            #     squat_text = "SQUATTING"
+            #     cv2.putText(frame, squat_text, (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, squat_color, 2)
 
 def main():
     # Define a rhythm pattern (in seconds from start)

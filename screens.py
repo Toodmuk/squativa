@@ -24,39 +24,45 @@ class MenuScreen:
         self.current_frame = 0
         self.frame_delay = 30  # Milliseconds between frames
         self.last_frame_time = 0
-        self.load_background_video()
-    
-    def load_background_video(self):
-        try:
-            # Skip video loading for simplicity
-            print("Skipping video loading for simplicity")
-        except Exception as e:
-            print(f"Error loading background video: {e}")
     
     def draw(self):
-        # Draw solid color background
-        self.game.screen.fill((30, 30, 50))
+        # Check if we have a background image
+        if self.game.scaled_background is not None:
+            # Draw the scaled background image
+            self.game.screen.blit(self.game.scaled_background, (0, 0))
+        else:
+            # Use the existing solid color as fallback
+            self.game.screen.fill((30, 30, 50))
         
+        # Rest of the code stays the same...
         # Draw title
         title_text = self.game.fonts["large"].render("SQUATIVA", True, self.game.WHITE)
-        title_rect = title_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//4))
+        title_rect = title_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//4 ))
         self.game.screen.blit(title_text, title_rect)
         
         # Draw start button
         button_width, button_height = 300, 80
         button_x = (self.game.WIDTH - button_width) // 2
-        button_y = self.game.HEIGHT // 2
+        button_y = (self.game.HEIGHT // 2) + 100
         
         pygame.draw.rect(self.game.screen, self.game.BLUE, (button_x, button_y, button_width, button_height), border_radius=15)
         pygame.draw.rect(self.game.screen, self.game.WHITE, (button_x, button_y, button_width, button_height), 3, border_radius=15)
         
         start_text = self.game.fonts["medium"].render("START", True, self.game.WHITE)
-        start_rect = start_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//2 + button_height//2))
+        start_rect = start_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//2 + button_height//2 + 100))
         self.game.screen.blit(start_text, start_rect)
         
         # Draw instructions
-        instructions_text = self.game.fonts["small"].render("Click START to select a song", True, self.game.WHITE)
-        instructions_rect = instructions_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT*3//4))
+        instructions_text = self.game.fonts["small"].render("Rules", True, self.game.RED)
+        instructions_rect = instructions_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT*3//4 - 270))
+        self.game.screen.blit(instructions_text, instructions_rect)
+        
+        instructions_text = self.game.fonts["small"].render("Squat in proper form", True, self.game.WHITE)
+        instructions_rect = instructions_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT*3//4 - 220))
+        self.game.screen.blit(instructions_text, instructions_rect)
+        
+        instructions_text = self.game.fonts["small"].render("Squat on target zone", True, self.game.WHITE)
+        instructions_rect = instructions_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT*3//4 - 170))
         self.game.screen.blit(instructions_text, instructions_rect)
         
         # Check for button click
@@ -255,14 +261,17 @@ class CountdownScreen:
         self.started = False
         self.countdown = 3
         self.transition_started = False
-    
+ 
     def draw(self):
         # Start countdown if not already started
         if not self.started:
             self.start()
         
         # Draw background
-        self.game.screen.fill((20, 20, 30))
+        if self.game.scaled_background:
+            self.game.screen.blit(self.game.scaled_background, (0, 0))
+        else:
+            self.game.screen.fill((20, 20, 30))
         
         # Calculate current countdown number
         current_time = pygame.time.get_ticks()
@@ -271,7 +280,7 @@ class CountdownScreen:
         # Prevent negative countdown
         self.countdown = max(0, 3 - (elapsed // self.count_duration))
         
-        # Debugging
+        # Debug info
         print(f"COUNTDOWN: Current time: {current_time}, Start time: {self.start_time}, Elapsed: {elapsed}")
         print(f"COUNTDOWN: Countdown number: {self.countdown}, Duration: {self.count_duration}")
         
@@ -283,14 +292,14 @@ class CountdownScreen:
             
             # Scale the text
             scaled_size = (int(count_text.get_width() * scale_factor), 
-                          int(count_text.get_height() * scale_factor))
+                        int(count_text.get_height() * scale_factor))
             scaled_text = pygame.transform.scale(count_text, scaled_size)
             
             text_rect = scaled_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//2))
             self.game.screen.blit(scaled_text, text_rect)
         
         # Transition to game
-        if self.countdown == 0 and not self.transition_started:
+        elif self.countdown == 0 and not self.transition_started:
             # Show "GO!" text
             go_text = self.game.fonts["large"].render("GO!", True, self.game.GREEN)
             text_rect = go_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//2))
@@ -315,11 +324,11 @@ class CountdownScreen:
             self.game.start_game()
             
             print(f"COUNTDOWN: Game state after transition: {self.game.state}")
-
+  
 class GameScreen:
     def __init__(self, game):
         self.game = game
-        self.game_duration = 60000  # 1 minute in milliseconds
+        self.game_duration = 6000  # 1 minute in milliseconds
         self.start_time = 0
         self.game_started = False
         
@@ -330,23 +339,84 @@ class GameScreen:
         # Check if camera opened successfully
         if not self.camera.isOpened():
             print("Error: Could not open camera. Using fallback.")
-    
+
     def start(self):
+        """Initialize the game screen and start the timer"""
         print("Starting game screen timer")
         self.game_started = True
         self.start_time = pygame.time.get_ticks()
-    
+        
+        # Make sure camera is initialized
+        if not hasattr(self, 'camera') or not self.camera.isOpened():
+            print("Reinitializing camera...")
+            try:
+                # Release old camera if it exists
+                if hasattr(self, 'camera'):
+                    self.camera.release()
+                
+                # Initialize a new camera
+                self.camera = cv2.VideoCapture(0)
+                if self.camera.isOpened():
+                    print("Camera successfully reinitialized")
+                else:
+                    print("Failed to reinitialize camera - will use fallback display")
+            except Exception as e:
+                print(f"Error initializing camera: {e}")
+        
+        # Make sure squat detector is initialized
+        if not hasattr(self, 'squat_detector'):
+            print("Reinitializing squat detector...")
+            try:
+                from opcv.squat_late import SquatDetector
+                self.squat_detector = SquatDetector()
+                print("Squat detector successfully reinitialized")
+            except Exception as e:
+                print(f"Error initializing squat detector: {e}")
+
     def draw_camera_feed(self):
-    # Read a frame from the camera
+        """Draw the camera feed with squat detection overlays"""
+        # Ensure background is drawn first
+        if self.game.scaled_background:
+            self.game.screen.blit(self.game.scaled_background, (0, 0))
+        else:
+            # Fallback background
+            self.game.screen.fill((30, 30, 50))
+        
+        # Read a frame from the camera
         try:
-            if self.camera.isOpened():
+            # Make sure camera is initialized
+            if not hasattr(self, 'camera') or not self.camera.isOpened():
+                print("Camera not initialized or opened, attempting to reinitialize...")
+                try:
+                    if hasattr(self, 'camera'):
+                        self.camera.release()
+                    self.camera = cv2.VideoCapture(0)
+                    print(f"Camera reinitialized: {self.camera.isOpened()}")
+                except Exception as e:
+                    print(f"Error reinitializing camera: {e}")
+            
+            # Try to read from camera
+            if hasattr(self, 'camera') and self.camera.isOpened():
                 ret, frame = self.camera.read()
                 if ret:
                     # Flip the frame horizontally for more intuitive interaction
                     frame = cv2.flip(frame, 1)
                     
-                    # Process frame with squat detector
-                    processed_frame = self.squat_detector.process_frame(frame)
+                    # Make sure squat detector is initialized
+                    if not hasattr(self, 'squat_detector'):
+                        print("Squat detector not initialized, attempting to reinitialize...")
+                        try:
+                            from opcv.squat_late import SquatDetector
+                            self.squat_detector = SquatDetector()
+                            print("Squat detector reinitialized")
+                        except Exception as e:
+                            print(f"Error reinitializing squat detector: {e}")
+                    
+                    # Process frame with squat detector if available
+                    if hasattr(self, 'squat_detector'):
+                        processed_frame = self.squat_detector.process_frame(frame)
+                    else:
+                        processed_frame = frame  # Fallback to unprocessed frame
                     
                     # Convert to PyGame surface
                     processed_frame = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
@@ -357,36 +427,28 @@ class GameScreen:
                     new_w, new_h = int(w * scale_factor), int(h * scale_factor)
                     processed_frame = cv2.resize(processed_frame, (new_w, new_h))
                     
-                    # Convert to PyGame surface
-                    processed_frame = np.rot90(processed_frame)
-                    pygame_surface = pygame.surfarray.make_surface(processed_frame)
-                    
-                    # Position the camera feed in the center
-                    x_offset = (self.game.WIDTH - new_w) // 2
-                    y_offset = (self.game.HEIGHT - new_h) // 2
-                    self.game.screen.blit(pygame_surface, (x_offset, y_offset))
-                    
-                    # Check for squats and update game
-                    self.check_for_squats()
-                    return  # Successfully displayed camera feed
+                    # Convert to PyGame surface correctly without rotation
+                    try:
+                        temp_surface = pygame.Surface((new_w, new_h))
+                        pygame.surfarray.blit_array(temp_surface, processed_frame.swapaxes(0, 1))
+                        
+                        # Position the camera feed in the center
+                        x_offset = (self.game.WIDTH - new_w) // 2
+                        y_offset = (self.game.HEIGHT - new_h) // 2
+                        self.game.screen.blit(temp_surface, (x_offset, y_offset))
+                        
+                        # Check for squats and update game
+                        self.check_for_squats()
+                        return True  # Successfully displayed camera feed
+                    except Exception as e:
+                        print(f"Error creating pygame surface from frame: {e}")
         except Exception as e:
-            print(f"Camera error: {e}")
-    
-        # If we got here, there was an error or no camera - use fallback
-        self.draw_gradient_background()
-    
-    def draw_gradient_background(self):
-        # Draw a COLORFUL background if camera not available
-        gradient_height = self.game.HEIGHT
-        for y in range(gradient_height):
-            # Create a blue-to-purple gradient background
-            color = (
-                50,  # Red
-                50 + int(100 * (1 - y / gradient_height)),  # Green decreases down the screen
-                100 + int(100 * (y / gradient_height))  # Blue increases down the screen
-            )
-            pygame.draw.line(self.game.screen, color, (0, y), (self.game.WIDTH, y))
-    
+            print(f"Error in camera feed: {e}")
+        
+        # If we got here, there was a problem with the camera feed
+        print("Using fallback display due to camera feed issue")
+        return False
+
     def check_for_squats(self):
         # Check the squat detector for detected squats
         for player_key, player_data in self.squat_detector.players.items():
@@ -446,45 +508,111 @@ class GameScreen:
             self.game.state = "RESULTS"
             return
         
-        # Draw timer with visible background
-        timer_bg = pygame.Surface((150, 40))
-        timer_bg.fill((0, 0, 100))
-        self.game.screen.blit(timer_bg, (self.game.WIDTH - 160, 10))
+
         
-        timer_text = self.game.fonts["medium"].render(f"{minutes:01d}:{seconds:02d}", True, self.game.WHITE)
-        self.game.screen.blit(timer_text, (self.game.WIDTH - 150, 20))
+        # Get scores from squat detector for both players
+        player1_score = int(self.squat_detector.players["player1"]["score"])
+        player2_score = int(self.squat_detector.players["player2"]["score"])
         
-        # Draw score with visible background
-        score_bg = pygame.Surface((200, 40))
-        score_bg.fill((0, 100, 0))
-        self.game.screen.blit(score_bg, (10, 10))
+        # Draw Player 1 score (left side)
+        score_bg_p1 = pygame.Surface((180, 40), pygame.SRCALPHA)
+        score_bg_p1.fill((0, 100, 0, 180))  # Semi-transparent green
+        self.game.screen.blit(score_bg_p1, (10, 200))
         
-        score_text = self.game.fonts["medium"].render(f"Score: {self.game.score}", True, self.game.WHITE)
-        self.game.screen.blit(score_text, (20, 20))
+        score_text_p1 = self.game.fonts["medium"].render("player1", True, self.game.WHITE)
+        self.game.screen.blit(score_text_p1, (20, 150))
+        score_text_p1 = self.game.fonts["medium"].render(f"{player1_score}", True, self.game.WHITE)
+        self.game.screen.blit(score_text_p1, (20, 200))
         
-        # Draw song and difficulty info with visible backgrounds
-        if self.game.selected_song and self.game.selected_difficulty:
-            info_bg = pygame.Surface((300, 80))
-            info_bg.fill((100, 0, 100))
-            self.game.screen.blit(info_bg, (10, 70))
-            
-            song_text = self.game.fonts["small"].render(f"Song: {self.game.selected_song['title']}", True, self.game.WHITE)
-            self.game.screen.blit(song_text, (20, 80))
-            
-            diff_text = self.game.fonts["small"].render(f"Difficulty: {self.game.selected_difficulty['name']}", True, self.game.WHITE)
-            self.game.screen.blit(diff_text, (20, 120))
+        # Draw Player 2 score (right side)
+        score_bg_p2 = pygame.Surface((180, 40), pygame.SRCALPHA)
+        score_bg_p2.fill((0, 100, 0, 180))  # Semi-transparent green
+        self.game.screen.blit(score_bg_p2, (self.game.WIDTH - 190, 200))
         
-        # Draw squat state indicator if squatting
+        score_text_p2_ds = self.game.fonts["medium"].render("player2", True, self.game.WHITE)
+        self.game.screen.blit(score_text_p2_ds, (self.game.WIDTH - 180, 150))
+        score_text_p2 = self.game.fonts["medium"].render(f"{player2_score}", True, self.game.WHITE)
+        self.game.screen.blit(score_text_p2, (self.game.WIDTH - 180, 200))
+        
+        # Draw squat state indicator if squatting (for either player)
         for player_key, player_data in self.squat_detector.players.items():
             if player_data["squat_state"]:
                 squat_color = self.game.GREEN if player_data["correct_form"] else self.game.RED
-                squat_bg = pygame.Surface((200, 40))
-                squat_bg.fill(squat_color)
-                self.game.screen.blit(squat_bg, (self.game.WIDTH - 360, 10))
+                
+                # Position based on player
+                if player_key == "player1":
+                    pos_x = 320
+                else:
+                    pos_x = self.game.WIDTH - 500
+                    
+                squat_bg = pygame.Surface((200, 40), pygame.SRCALPHA)
+                squat_bg.fill((*squat_color[:3], 180))  # Semi-transparent
+                self.game.screen.blit(squat_bg, (pos_x, 600))
                 
                 squat_text = self.game.fonts["medium"].render("SQUATTING", True, self.game.WHITE)
-                self.game.screen.blit(squat_text, (self.game.WIDTH - 350, 20))
-                break
+                self.game.screen.blit(squat_text, (pos_x + 10, 600))
+        
+        # Add back to menu button
+        menu_btn_width, menu_btn_height = 150, 50
+        menu_btn_x = 20
+        menu_btn_y = self.game.HEIGHT - menu_btn_height - 20
+        
+        # Semi-transparent button
+        menu_btn_bg = pygame.Surface((menu_btn_width, menu_btn_height), pygame.SRCALPHA)
+        menu_btn_bg.fill((255, 50, 50, 180))  # Semi-transparent red
+        self.game.screen.blit(menu_btn_bg, (menu_btn_x, menu_btn_y))
+        
+        pygame.draw.rect(self.game.screen, self.game.WHITE, 
+                        (menu_btn_x, menu_btn_y, menu_btn_width, menu_btn_height), 
+                        2, border_radius=10)
+        
+        menu_text = self.game.fonts["small"].render("Menu", True, self.game.WHITE)
+        menu_rect = menu_text.get_rect(center=(menu_btn_x + menu_btn_width//2, menu_btn_y + menu_btn_height//2))
+        self.game.screen.blit(menu_text, menu_rect)
+        
+        # Check for button click
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_clicked = pygame.mouse.get_pressed()[0]
+        
+        if (menu_btn_x <= mouse_pos[0] <= menu_btn_x + menu_btn_width and
+            menu_btn_y <= mouse_pos[1] <= menu_btn_y + menu_btn_height and mouse_clicked):
+            print("Menu button clicked - returning to menu")
+            self.cleanup()  # Clean up camera resources
+            self.game.state = "MENU"
+            try:
+                pygame.mixer.music.stop()
+            except:
+                pass
+
+        # Start timer if not already started
+        if not self.game_started:
+            print("Game UI starting timer")
+            self.start()
+        
+        # Calculate remaining time
+        current_time = pygame.time.get_ticks()
+        elapsed = current_time - self.start_time
+        remaining = max(0, self.game_duration - elapsed)
+        minutes = remaining // 60000
+        seconds = (remaining % 60000) // 1000
+        
+        # Check if game is over
+        if remaining <= 0:
+            print("Game timer finished - transitioning to results")
+            self.cleanup()  # Clean up camera resources
+            self.game.state = "RESULTS"
+            return
+        
+        # Draw timer with visible background
+        timer_bg = pygame.Surface((140, 90))
+        timer_bg.fill((0, 0, 100))
+        self.game.screen.blit(timer_bg, ((self.game.WIDTH/2)-50, 10))
+        
+        timer_text = self.game.fonts["large"].render(f"{seconds:02d}", True, self.game.WHITE)
+        self.game.screen.blit(timer_text, ((self.game.WIDTH/2)-20, 20))
+        
+        
+    
         
         # Add back to menu button
         menu_btn_width, menu_btn_height = 150, 50
@@ -512,11 +640,23 @@ class GameScreen:
                 pygame.mixer.music.stop()
             except:
                 pass
-    
+
     def draw(self):
+        """Main draw method for the game screen"""
         print("DRAWING GAME SCREEN")
-        # First draw the camera feed as the base layer (fullscreen)
-        self.draw_camera_feed()
+        
+        # Ensure game is started
+        if not self.game_started:
+            self.start()
+        
+        # Draw camera feed - if it fails, the method handles the fallback
+        camera_success = self.draw_camera_feed()
+        
+        # If camera feed failed, ensure we at least have the background
+        if not camera_success and self.game.scaled_background:
+            self.game.screen.blit(self.game.scaled_background, (0, 0))
+        elif not camera_success:
+            self.game.screen.fill((30, 30, 50))  # Dark background as fallback
         
         # Draw target zone on top of camera feed
         self.draw_target_zone()
@@ -528,7 +668,7 @@ class GameScreen:
         
         # Draw game UI elements on top
         self.draw_game_ui()
-    
+   
     def cleanup(self):
         """Release camera resources when leaving the game screen"""
         if hasattr(self, 'camera') and self.camera.isOpened():
@@ -544,49 +684,138 @@ class ResultsScreen:
         # Skip QR code generation for testing
         print("Skipping QR code generation for testing")
         self.qr_generated = True
-    
+
+    def reset_game(self):
+        """Reset the game state when returning to menu"""
+        print("Resetting game state...")
+        
+        # Stop music if playing
+        try:
+            pygame.mixer.music.stop()
+            print("Music stopped successfully")
+        except Exception as e:
+            print(f"Error stopping music: {e}")
+        
+        # Reset scores
+        self.game.score = 0
+        
+        # Reset squat graphics
+        self.game.squat_graphics = []
+        
+        # Reset player data in squat detector if exists
+        if hasattr(self.game, 'game_screen') and hasattr(self.game.game_screen, 'squat_detector'):
+            for player_key in self.game.game_screen.squat_detector.players:
+                player = self.game.game_screen.squat_detector.players[player_key]
+                player["squat_count"] = 0
+                player["score"] = 0
+                player["squat_state"] = False
+                player["rhythm_score"] = 0
+                player["total_rhythm_squats"] = 0
+                print(f"Reset {player_key} data")
+        
+        # Clean up any resources
+        if hasattr(self.game, 'game_screen'):
+            self.game.game_screen.cleanup()
+            
+        # Reset selection state
+        self.game.selected_song = None
+        self.game.selected_difficulty = None
+        
+        # Make sure countdown screen is reset
+        if hasattr(self.game, 'countdown_screen'):
+            self.game.countdown_screen.reset()
+            print("Countdown screen reset")
+        
+        # Reinitialize game_screen with a fresh SquatDetector
+        if hasattr(self.game, 'game_screen'):
+            try:
+                from opcv.squat_late import SquatDetector
+                self.game.game_screen.squat_detector = SquatDetector()
+                self.game.game_screen.game_started = False
+                self.game.game_screen.start_time = 0
+                print("Game screen reinitialized")
+            except ImportError as e:
+                print(f"Error reinitializing SquatDetector: {e}")
+        
+        print("Game state reset complete")
+
     def draw(self):
         # Generate QR code if not already done
         if not self.qr_generated:
             self.generate_qr_code()
         
         # Draw background
-        self.game.screen.fill((30, 30, 50))
+        if self.game.scaled_background:
+            self.game.screen.blit(self.game.scaled_background, (0, 0))
+        else:
+            self.game.screen.fill((30, 30, 50))
         
-        # Draw congratulations message
-        title_text = self.game.fonts["large"].render("GAME COMPLETE!", True, self.game.WHITE)
-        title_rect = title_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//8))
-        self.game.screen.blit(title_text, title_rect)
+        # Get scores from squat detector for both players
+        try:
+            player1_score = int(self.game.game_screen.squat_detector.players["player1"]["score"])
+            player2_score = int(self.game.game_screen.squat_detector.players["player2"]["score"])
+        except (AttributeError, KeyError):
+            # Fallback if we can't get scores from squat detector
+            player1_score = 1000  # Example value
+            player2_score = 200   # Example value
         
-        # Draw score
-        score_text = self.game.fonts["medium"].render(f"Your Score: {self.game.score}", True, self.game.WHITE)
-        score_rect = score_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//4))
-        self.game.screen.blit(score_text, score_rect)
+        # Determine winner
+        if player1_score >= player2_score:
+            winner = "PLAYER 1"
+            winner_score = player1_score
+            loser = "PLAYER 2"
+            loser_score = player2_score
+        else:
+            winner = "PLAYER 2"
+            winner_score = player2_score
+            loser = "PLAYER 1"
+            loser_score = player1_score
         
-        # Draw simulated QR code
-        qr_rect = pygame.Rect(0, 0, 200, 200)
-        qr_rect.center = (self.game.WIDTH//2, self.game.HEIGHT//2)
-        pygame.draw.rect(self.game.screen, self.game.WHITE, qr_rect)
+        # Draw WINNER section - top third of screen
+        winner_y_start = self.game.HEIGHT // 8
         
-        # Draw QR code pattern
-        for i in range(10):
-            for j in range(10):
-                if (i + j) % 2 == 0:
-                    pygame.draw.rect(
-                        self.game.screen, 
-                        self.game.BLACK, 
-                        (qr_rect.left + i*20, qr_rect.top + j*20, 20, 20)
-                    )
+        # Draw "WINNER" title
+        winner_title = self.game.fonts["large"].render("WINNER", True, self.game.YELLOW)
+        winner_title_rect = winner_title.get_rect(center=(self.game.WIDTH//2, winner_y_start))
+        self.game.screen.blit(winner_title, winner_title_rect)
         
-        # Add scan instructions
-        scan_text = self.game.fonts["small"].render("Scan this QR code to save your score", True, self.game.WHITE)
-        scan_rect = scan_text.get_rect(center=(self.game.WIDTH//2, self.game.HEIGHT//2 + 150))
-        self.game.screen.blit(scan_text, scan_rect)
+        # Draw winner name
+        winner_name = self.game.fonts["medium"].render(winner, True, self.game.WHITE)
+        winner_name_rect = winner_name.get_rect(center=(self.game.WIDTH//2, winner_y_start + 100))
+        self.game.screen.blit(winner_name, winner_name_rect)
+        
+        # Draw winner score with glow effect
+        score_bg = pygame.Surface((300, 100), pygame.SRCALPHA)
+        score_bg.fill((0, 200, 0, 80))  # Green glow
+        score_rect = score_bg.get_rect(center=(self.game.WIDTH//2, winner_y_start + 180))
+        self.game.screen.blit(score_bg, score_rect)
+        
+        winner_score_text = self.game.fonts["large"].render(str(winner_score), True, self.game.GREEN)
+        winner_score_rect = winner_score_text.get_rect(center=(self.game.WIDTH//2, winner_y_start + 180))
+        self.game.screen.blit(winner_score_text, winner_score_rect)
+        
+        # Draw LOSER section - bottom third of screen
+        loser_y_start = self.game.HEIGHT // 2 + 50
+        
+        # Draw "LOSER" title
+        loser_title = self.game.fonts["medium"].render("LOSER", True, self.game.RED)
+        loser_title_rect = loser_title.get_rect(center=(self.game.WIDTH//2, loser_y_start))
+        self.game.screen.blit(loser_title, loser_title_rect)
+        
+        # Draw loser name
+        loser_name = self.game.fonts["small"].render(loser, True, self.game.WHITE)
+        loser_name_rect = loser_name.get_rect(center=(self.game.WIDTH//2, loser_y_start + 50))
+        self.game.screen.blit(loser_name, loser_name_rect)
+        
+        # Draw loser score
+        loser_score_text = self.game.fonts["medium"].render(str(loser_score), True, self.game.WHITE)
+        loser_score_rect = loser_score_text.get_rect(center=(self.game.WIDTH//2, loser_y_start + 100))
+        self.game.screen.blit(loser_score_text, loser_score_rect)
         
         # Draw menu button
         menu_btn_width, menu_btn_height = 300, 80
         menu_btn_x = (self.game.WIDTH - menu_btn_width) // 2
-        menu_btn_y = self.game.HEIGHT * 3//4
+        menu_btn_y = self.game.HEIGHT * 3//4 + 50
         
         pygame.draw.rect(self.game.screen, self.game.BLUE, 
                         (menu_btn_x, menu_btn_y, menu_btn_width, menu_btn_height), 
@@ -605,4 +834,15 @@ class ResultsScreen:
         
         if (menu_btn_x <= mouse_pos[0] <= menu_btn_x + menu_btn_width and
             menu_btn_y <= mouse_pos[1] <= menu_btn_y + menu_btn_height and mouse_clicked):
+            # Stop the music
+            try:
+                pygame.mixer.music.stop()
+                print("Music stopped successfully")
+            except Exception as e:
+                print(f"Error stopping music: {e}")
+            
+            # Reset game state
+            self.reset_game()
+            
+            # Return to menu
             self.game.state = "MENU"

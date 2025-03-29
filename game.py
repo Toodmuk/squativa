@@ -2,10 +2,9 @@ import pygame
 import sys
 import numpy as np
 import os
-import random
 from pygame.locals import *
 
-class FitnessDanceGame:
+class Squativa:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
@@ -13,7 +12,7 @@ class FitnessDanceGame:
         # Set up display for windowed mode
         self.WIDTH, self.HEIGHT = 1280, 720
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Fitness Dance Game")
+        pygame.display.set_caption("Squativa")
         
         # Colors
         self.WHITE = (255, 255, 255)
@@ -23,6 +22,34 @@ class FitnessDanceGame:
         self.RED = (255, 50, 50)
         self.YELLOW = (255, 255, 0)
         self.PURPLE = (180, 0, 255)
+        
+        # Direct background loading - REPLACE the existing background loading
+        self.background_image = None
+        self.scaled_background = None
+        
+        # Try to load background directly
+        bg_path = "graphics/bg.png"
+        if os.path.exists(bg_path):
+            try:
+                print("DIRECT BACKGROUND LOADING: Loading background...")
+                self.background_image = pygame.image.load(bg_path).convert()
+                
+                # Scale it
+                scale_factor = max(self.WIDTH / self.background_image.get_width(), 
+                                self.HEIGHT / self.background_image.get_height())
+                new_width = int(self.background_image.get_width() * scale_factor)
+                new_height = int(self.background_image.get_height() * scale_factor)
+                scaled_bg = pygame.transform.scale(self.background_image, (new_width, new_height))
+                
+                # Crop if needed
+                crop_x = max(0, (new_width - self.WIDTH) // 2)
+                crop_y = max(0, (new_height - self.HEIGHT) // 2)
+                self.scaled_background = scaled_bg.subsurface((crop_x, crop_y, self.WIDTH, self.HEIGHT))
+                print("DIRECT BACKGROUND LOADING: Background loaded successfully!")
+            except Exception as e:
+                print(f"DIRECT BACKGROUND LOADING: Error loading background: {e}")
+        else:
+            print(f"DIRECT BACKGROUND LOADING: Background file not found at: {bg_path}")
         
         # Load fonts
         self.fonts = self.load_fonts()
@@ -39,7 +66,7 @@ class FitnessDanceGame:
         
         # Squat graphic properties
         self.squat_graphics = []
-        self.target_position = (self.WIDTH // 4, self.HEIGHT // 2)
+        self.target_position = (self.WIDTH // 4, self.HEIGHT // 2 + 200)
         self.target_zone_radius = 50
         
         # Load squat image
@@ -62,7 +89,7 @@ class FitnessDanceGame:
         self.countdown_started = False
         
         # Game timer
-        self.game_duration = 60000  # 1 minute in milliseconds
+        self.game_duration = 6000  # 1 minute in milliseconds
         self.game_start_time = 0
         
         # Initialize screen objects
@@ -73,6 +100,33 @@ class FitnessDanceGame:
         self.results_screen = ResultsScreen(self)
         
         print("Game initialized successfully")
+        
+    # Add this method to the FitnessDanceGame class
+    def load_background_image(self):
+        """Load the custom background image"""
+        from utils import load_background_image, scale_background
+        
+        # Load the background image
+        self.background_image = load_background_image()
+        
+        # Scale it to fit the screen
+        if self.background_image:
+            self.scaled_background = scale_background(
+                self.background_image, self.WIDTH, self.HEIGHT)
+            print("Background image loaded and scaled successfully")
+        else:
+            print("Using fallback background color")
+            
+    # When you need to update the background scale (for example, when changing resolution)
+    def update_background_scale(self):
+        """Update the background scale if the screen size changes"""
+        from utils import scale_background
+        
+        if self.background_image:
+            self.scaled_background = scale_background(
+                self.background_image, self.WIDTH, self.HEIGHT)
+    
+    
     
     def load_fonts(self):
         fonts = {}
@@ -127,53 +181,50 @@ class FitnessDanceGame:
         return music_library
     
     def load_squat_image(self):
-        squat_image = None
-        try:
-            # Print current working directory and path for debugging
-            print(f"Current working directory: {os.getcwd()}")
-            print(f"Looking for squat image at: {os.path.join(os.getcwd(), 'graphics/squat.jpg')}")
-            
-            # Try jpg first
-            image_path = "graphics/squat.jpg"
-            if os.path.exists(image_path):
-                print(f"Loading image from: {image_path}")
+        # Define the image path
+        image_path = "graphics/Squat.png"
+        
+        # Check if the file exists
+        if os.path.exists(image_path):
+            print(f"Found squat image at: {image_path}")
+            try:
+                # Load the actual image file
                 squat_image = pygame.image.load(image_path).convert_alpha()
-                print("Squat image loaded successfully!")
-            else:
-                # Try png as fallback
-                image_path = "graphics/squat.png"
-                if os.path.exists(image_path):
-                    print(f"Loading image from: {image_path}")
-                    squat_image = pygame.image.load(image_path).convert_alpha()
-                    print("Squat image loaded successfully!")
-                else:
-                    print("No squat image found, creating placeholder")
-        except Exception as e:
-            print(f"Error loading squat image: {e}")
-        
-        # Create placeholder if image loading failed
-        if squat_image is None:
-            print("Creating placeholder squat image")
-            squat_image = pygame.Surface((100, 100), pygame.SRCALPHA)
-            # Background circle
-            pygame.draw.circle(squat_image, (150, 100, 255, 200), (50, 50), 45)
-            pygame.draw.circle(squat_image, (200, 150, 255, 200), (50, 50), 45, 3)
-            # Stick figure
-            pygame.draw.circle(squat_image, self.WHITE, (50, 30), 12)  # Head
-            pygame.draw.line(squat_image, self.WHITE, (50, 42), (50, 65), 4)  # Body
-            pygame.draw.line(squat_image, self.WHITE, (50, 50), (25, 60), 4)  # Left arm
-            pygame.draw.line(squat_image, self.WHITE, (50, 50), (75, 60), 4)  # Right arm
-            pygame.draw.line(squat_image, self.WHITE, (50, 65), (30, 85), 4)  # Left leg
-            pygame.draw.line(squat_image, self.WHITE, (50, 65), (70, 85), 4)  # Right leg
-            # Add text
-            font = pygame.font.SysFont("Arial", 12, bold=True)
-            text = font.render("SQUAT", True, self.WHITE)
-            text_rect = text.get_rect(center=(50, 15))
-            squat_image.blit(text, text_rect)
-        
-        return squat_image
+                print(f"Successfully loaded Squat.png: {squat_image.get_size()}")
+                return squat_image
+            except Exception as e:
+                print(f"Error loading squat image: {e}")
+                return None
+        else:
+            print(f"Squat image not found at: {image_path}")
+            return None
     
     def generate_squat_graphic(self):
+        # Get speed from selected difficulty or use default
+        speed = 300
+        if self.selected_difficulty:
+            speed = self.selected_difficulty["speed"]
+        
+        # Skip graphic generation if no squat image is available
+        if self.squat_image is None:
+            print("Cannot generate squat graphic - no image available")
+            return
+        
+        graphic = {
+            "x": self.WIDTH + 100,  # Start off-screen to the right
+            "y": self.HEIGHT // 2 + 200,
+            "width": 100,
+            "height": 100,
+            "speed": speed,
+            "active": True,
+            "opacity": 255,
+            "shine": 0,
+            "reached_target": False,
+            "image": self.squat_image  # Pass the image directly
+        }
+        self.squat_graphics.append(graphic)
+        print(f"Generated new squat graphic, total: {len(self.squat_graphics)}")
+    
         # Get speed from selected difficulty or use default
         speed = 300
         if self.selected_difficulty:
@@ -331,7 +382,10 @@ class FitnessDanceGame:
         
     def draw_unified_selection(self):
         # Draw background
-        self.screen.fill((30, 30, 50))
+        if self.scaled_background:
+            self.screen.blit(self.scaled_background, (0, 0))
+        else:
+            self.screen.fill((30, 30, 50))
         
         # Draw title
         title_text = self.fonts["large"].render("SELECT SONG AND DIFFICULTY", True, self.WHITE)
@@ -508,8 +562,8 @@ class FitnessDanceGame:
                             self.selected_difficulty = self.selected_song["difficulties"][0]
                         self.start_game()
             
-            # Clear the screen
-            self.screen.fill((40, 40, 60))  # Dark blue-gray background
+            # # Clear the screen
+            # self.screen.fill((40, 40, 60))  # Dark blue-gray background
             
             # Update game logic based on current state
             try:
@@ -550,5 +604,5 @@ class FitnessDanceGame:
 
 # Create and run the game
 if __name__ == "__main__":
-    game = FitnessDanceGame()
+    game = Squativa()
     game.run()
