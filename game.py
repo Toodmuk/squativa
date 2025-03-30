@@ -89,7 +89,7 @@ class Squativa:
         self.countdown_started = False
         
         # Game timer
-        self.game_duration = 6000  # 1 minute in milliseconds
+        self.game_duration = 60000  # 1 minute in milliseconds
         self.game_start_time = 0
         
         # Initialize screen objects

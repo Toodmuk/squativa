@@ -218,7 +218,7 @@ def draw_unified_selection(self):
         play_button_y <= mouse_pos[1] <= play_button_y + play_button_height and mouse_clicked):
         self.selected_song = selected_song
         self.selected_difficulty = selected_song["difficulties"][self.selected_difficulty_index]
-        print(f"Selected song: {self.selected_song['title']}, difficulty: {self.selected_difficulty['name']}")
+        # print(f"Selected song: {self.selected_song['title']}, difficulty: {self.selected_difficulty['name']}")
         
         # Reset countdown screen - IMPORTANT
         self.countdown_screen.reset()
@@ -251,13 +251,13 @@ class CountdownScreen:
         self.transition_started = False
     
     def start(self):
-        print("COUNTDOWN: Starting countdown sequence")
+        # print("COUNTDOWN: Starting countdown sequence")
         self.started = True
         self.start_time = pygame.time.get_ticks()
         self.transition_started = False
     
     def reset(self):
-        print("COUNTDOWN: Resetting countdown")
+        # print("COUNTDOWN: Resetting countdown")
         self.started = False
         self.countdown = 3
         self.transition_started = False
@@ -281,8 +281,8 @@ class CountdownScreen:
         self.countdown = max(0, 3 - (elapsed // self.count_duration))
         
         # Debug info
-        print(f"COUNTDOWN: Current time: {current_time}, Start time: {self.start_time}, Elapsed: {elapsed}")
-        print(f"COUNTDOWN: Countdown number: {self.countdown}, Duration: {self.count_duration}")
+        # print(f"COUNTDOWN: Current time: {current_time}, Start time: {self.start_time}, Elapsed: {elapsed}")
+        # print(f"COUNTDOWN: Countdown number: {self.countdown}, Duration: {self.count_duration}")
         
         # Draw the countdown number or GO
         if self.countdown > 0:
@@ -309,26 +309,26 @@ class CountdownScreen:
             self.transition_started = True
             
             # Immediate transition to game
-            print("COUNTDOWN: TRANSITIONING TO GAME")
-            print(f"COUNTDOWN: Current game state before transition: {self.game.state}")
+            # print("COUNTDOWN: TRANSITIONING TO GAME")
+            # print(f"COUNTDOWN: Current game state before transition: {self.game.state}")
             
             # Explicitly set up game before transitioning
             if self.game.selected_song is None:
-                print("COUNTDOWN: No song selected, using default")
+                # print("COUNTDOWN: No song selected, using default")
                 self.game.selected_song = self.game.music_library[0]
             if self.game.selected_difficulty is None:
-                print("COUNTDOWN: No difficulty selected, using default")
+                # print("COUNTDOWN: No difficulty selected, using default")
                 self.game.selected_difficulty = self.game.selected_song["difficulties"][0]
             
             # Start the game
             self.game.start_game()
             
-            print(f"COUNTDOWN: Game state after transition: {self.game.state}")
+            # print(f"COUNTDOWN: Game state after transition: {self.game.state}")
   
 class GameScreen:
     def __init__(self, game):
         self.game = game
-        self.game_duration = 6000  # 1 minute in milliseconds
+        self.game_duration = 60000  # 1 minute in milliseconds
         self.start_time = 0
         self.game_started = False
         
@@ -342,7 +342,7 @@ class GameScreen:
 
     def start(self):
         """Initialize the game screen and start the timer"""
-        print("Starting game screen timer")
+        # print("Starting game screen timer")
         self.game_started = True
         self.start_time = pygame.time.get_ticks()
         
@@ -491,14 +491,13 @@ class GameScreen:
     def draw_game_ui(self):
         # Start timer if not already started
         if not self.game_started:
-            print("Game UI starting timer")
+            # print("Game UI starting timer")
             self.start()
         
         # Calculate remaining time
         current_time = pygame.time.get_ticks()
         elapsed = current_time - self.start_time
         remaining = max(0, self.game_duration - elapsed)
-        minutes = remaining // 60000
         seconds = (remaining % 60000) // 1000
         
         # Check if game is over
@@ -586,7 +585,7 @@ class GameScreen:
 
         # Start timer if not already started
         if not self.game_started:
-            print("Game UI starting timer")
+            # print("Game UI starting timer")
             self.start()
         
         # Calculate remaining time
@@ -643,7 +642,7 @@ class GameScreen:
 
     def draw(self):
         """Main draw method for the game screen"""
-        print("DRAWING GAME SCREEN")
+        # print("DRAWING GAME SCREEN")
         
         # Ensure game is started
         if not self.game_started:
@@ -680,10 +679,10 @@ class ResultsScreen:
         self.qr_code = None
         self.qr_generated = False
     
-    def generate_qr_code(self):
-        # Skip QR code generation for testing
-        print("Skipping QR code generation for testing")
-        self.qr_generated = True
+    # def generate_qr_code(self):
+    #     # Skip QR code generation for testing
+    #     print("Skipping QR code generation for testing")
+    #     self.qr_generated = True
 
     def reset_game(self):
         """Reset the game state when returning to menu"""
@@ -711,7 +710,7 @@ class ResultsScreen:
                 player["squat_state"] = False
                 player["rhythm_score"] = 0
                 player["total_rhythm_squats"] = 0
-                print(f"Reset {player_key} data")
+                # print(f"Reset {player_key} data")
         
         # Clean up any resources
         if hasattr(self.game, 'game_screen'):

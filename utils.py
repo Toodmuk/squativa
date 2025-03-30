@@ -89,7 +89,7 @@ def draw_squat_graphic(surface, graphic):
     squat_image = graphic.get("image")
     
     if squat_image is None:
-        print("Warning: No image in graphic, skipping draw")
+        # print("Warning: No image in graphic, skipping draw")
         return
     
     # Scale image to fit graphic dimensions
