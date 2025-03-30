@@ -1,8 +1,7 @@
-# squativa
-
 # Squativa - the Squat Game
 
 Squativa is an interactive fitness game that combines rhythm and squats. Players perform squats in sync with a rhythm pattern while maintaining proper form to score points. The game supports two players and uses a webcam for squat detection.
+Presented by Intania Hackathon
 
 ## Features
 - **Rhythm-Based Gameplay**: Perform squats in sync with the rhythm pattern.
