@@ -11,7 +11,7 @@ Presented by Intania Hackathon
 - **Dynamic Graphics**: Visual feedback with squat graphics and target zones.
 
 ## Requirements
-- Python 3.8+
+- Python 3.10
 - Pygame
 - OpenCV
 - MediaPipe
