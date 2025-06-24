@@ -1,2 +1,1 @@
-
-        traceback.print_exc()
+traceback
