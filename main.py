@@ -6,11 +6,11 @@ import cv2
 def main():
     try:
         print("Starting Fitness Dance Game with forced background...")
-        
+
         # Initialize pygame first
         pygame.init()
         pygame.mixer.init()
-        
+
         # Pre-load the background image directly
         print("Pre-loading background image...")
         try:
