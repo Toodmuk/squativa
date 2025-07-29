@@ -29,7 +29,7 @@ LOWER_THRESHOLD = 160    # Arm fully extended
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 # Set the capture resolution if supported by the camera
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, SCREEN_WIDTH)

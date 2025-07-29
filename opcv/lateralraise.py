@@ -3,6 +3,9 @@ import mediapipe as mp
 import numpy as np
 import math
 
+## TODO Fix the parameter the rep counting is overly sensitive
+
+
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
